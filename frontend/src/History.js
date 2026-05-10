@@ -6,7 +6,7 @@ function History() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/history")
+      .get("https://bullkmail.onrender.com/history")
       .then((res) => setHistory(res.data))
       .catch((err) => console.log(err));
   }, []);
