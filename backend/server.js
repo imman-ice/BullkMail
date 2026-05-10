@@ -8,14 +8,21 @@ import Email from "./models/Email.js";
 dotenv.config();
 
 const app = express();
+
+// Middleware
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // MongoDB connect
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.log("MongoDB Error:", err));
+  .then(() => console.log("MongoDB Connected Successfully"))
+  .catch((err) => console.log("MongoDB Connection Error:", err));
+
+// Test route (to check backend is running)
+app.get("/", (req, res) => {
+  res.send("Backend is running successfully!");
+});
 
 // Send Email API
 app.post("/send-email", async (req, res) => {
@@ -41,6 +48,7 @@ app.post("/send-email", async (req, res) => {
       text: body
     });
 
+    // Save success record
     await Email.create({
       subject,
       body,
@@ -50,8 +58,9 @@ app.post("/send-email", async (req, res) => {
 
     res.json({ message: "Email Sent Successfully!" });
   } catch (error) {
-    console.log("Email Error:", error);
+    console.log("Email Sending Error:", error);
 
+    // Save failed record
     await Email.create({
       subject,
       body,
@@ -63,13 +72,19 @@ app.post("/send-email", async (req, res) => {
   }
 });
 
-// Email History API
+// History API
 app.get("/history", async (req, res) => {
-  const history = await Email.find().sort({ createdAt: -1 });
-  res.json(history);
+  try {
+    const history = await Email.find().sort({ createdAt: -1 });
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch history!" });
+  }
 });
 
-// Start Server
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on http://localhost:${process.env.PORT}`);
+// IMPORTANT: Render uses its own PORT
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
