@@ -35,23 +35,22 @@ app.post("/send-email", async (req, res) => {
   }
 
   try {
-    // transporter
+    // SendGrid transporter
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
+      host: "smtp.sendgrid.net",
       port: 587,
-      secure: false,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        user: "apikey",
+        pass: process.env.SENDGRID_API_KEY
       }
     });
 
     await transporter.verify();
-    console.log("SMTP Verified Successfully");
+    console.log("SendGrid SMTP Verified Successfully");
 
-    // send mail
+    // Send email
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: process.env.EMAIL_USER, // must be verified in SendGrid
       to: recipients,
       subject,
       text: body
@@ -70,7 +69,7 @@ app.post("/send-email", async (req, res) => {
     console.log("EMAIL ERROR FULL:", error);
     console.log("EMAIL ERROR MESSAGE:", error.message);
 
-    // Save failed record (only if DB is connected)
+    // Save failed record
     if (mongoose.connection.readyState === 1) {
       await Email.create({
         subject,
