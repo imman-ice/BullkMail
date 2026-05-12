@@ -26,7 +26,7 @@ app.get("/", (req, res) => {
 
 // Send Email API
 app.post("/send-email", async (req, res) => {
-  console.log("SEND EMAIL API HIT:", req.body); // 🔥 Debug log
+  console.log("SEND EMAIL API HIT:", req.body);
 
   const { subject, body, recipients } = req.body;
 
@@ -37,17 +37,18 @@ app.post("/send-email", async (req, res) => {
   try {
     // transporter
     const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
 
-await transporter.verify();
-console.log("SMTP Verified Successfully");
+    await transporter.verify();
+    console.log("SMTP Verified Successfully");
+
     // send mail
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
@@ -69,13 +70,15 @@ console.log("SMTP Verified Successfully");
     console.log("EMAIL ERROR FULL:", error);
     console.log("EMAIL ERROR MESSAGE:", error.message);
 
-    // Save failed record
-    await Email.create({
-      subject,
-      body,
-      recipients,
-      status: "Failed"
-    });
+    // Save failed record (only if DB is connected)
+    if (mongoose.connection.readyState === 1) {
+      await Email.create({
+        subject,
+        body,
+        recipients,
+        status: "Failed"
+      });
+    }
 
     return res.status(500).json({
       message: "Failed to send email!",
