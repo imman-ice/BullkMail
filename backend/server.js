@@ -17,15 +17,17 @@ app.use(express.json());
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected Successfully"))
-  .catch((err) => console.log("MongoDB Connection Error:", err));
+  .catch((err) => console.log("MongoDB Connection Error:", err.message));
 
-// Test route (to check backend is running)
+// Test route
 app.get("/", (req, res) => {
   res.send("Backend is running successfully!");
 });
 
 // Send Email API
 app.post("/send-email", async (req, res) => {
+  console.log("SEND EMAIL API HIT:", req.body); // 🔥 Debug log
+
   const { subject, body, recipients } = req.body;
 
   if (!subject || !body || !recipients || recipients.length === 0) {
@@ -33,6 +35,7 @@ app.post("/send-email", async (req, res) => {
   }
 
   try {
+    // transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -41,10 +44,11 @@ app.post("/send-email", async (req, res) => {
       }
     });
 
+    // send mail
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: recipients,
-      subject: subject,
+      subject,
       text: body
     });
 
@@ -56,9 +60,10 @@ app.post("/send-email", async (req, res) => {
       status: "Success"
     });
 
-    res.json({ message: "Email Sent Successfully!" });
+    return res.json({ message: "Email Sent Successfully!" });
   } catch (error) {
-    console.log("Email Sending Error:", error);
+    console.log("EMAIL ERROR FULL:", error);
+    console.log("EMAIL ERROR MESSAGE:", error.message);
 
     // Save failed record
     await Email.create({
@@ -68,7 +73,10 @@ app.post("/send-email", async (req, res) => {
       status: "Failed"
     });
 
-    res.status(500).json({ message: "Failed to send email!" });
+    return res.status(500).json({
+      message: "Failed to send email!",
+      error: error.message
+    });
   }
 });
 
@@ -76,13 +84,14 @@ app.post("/send-email", async (req, res) => {
 app.get("/history", async (req, res) => {
   try {
     const history = await Email.find().sort({ createdAt: -1 });
-    res.json(history);
+    return res.json(history);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch history!" });
+    console.log("HISTORY ERROR:", error.message);
+    return res.status(500).json({ message: "Failed to fetch history!" });
   }
 });
 
-// IMPORTANT: Render uses its own PORT
+// PORT (works for local + Render)
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
