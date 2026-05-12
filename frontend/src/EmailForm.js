@@ -18,7 +18,7 @@ function EmailForm() {
     const emailList = recipients.split(",").map((email) => email.trim());
 
     try {
-      const res = await axios.post("https://bullkmail.onrender.com/send-email", {
+      const res = await axios.post("https://bullkmail.onrender.com/", {
         subject,
         body,
         recipients: emailList
